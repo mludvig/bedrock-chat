@@ -40,6 +40,9 @@ describe("Bedrock Chat Stack Test", () => {
         envPrefix: "test-",
         bedrockRegion: "us-east-1",
         crossRegionReferences: true,
+        internetSearchEngine: "duckduckgo",
+        internetSearchApiKey: "",
+        internetSearchMaxResults: 10,
         webAclId: "",
         identityProviders: [
           {
@@ -117,6 +120,9 @@ describe("Bedrock Chat Stack Test", () => {
         envPrefix: "test-",
         bedrockRegion: "us-east-1",
         crossRegionReferences: true,
+        internetSearchEngine: "duckduckgo",
+        internetSearchApiKey: "",
+        internetSearchMaxResults: 10,
         webAclId: "",
         identityProviders: [
           {
@@ -190,6 +196,9 @@ describe("Bedrock Chat Stack Test", () => {
       envName: "test",
       envPrefix: "test-",
       bedrockRegion: "us-east-1",
+      internetSearchEngine: "duckduckgo",
+      internetSearchApiKey: "",
+      internetSearchMaxResults: 10,
       crossRegionReferences: true,
       webAclId: "",
       identityProviders: [],
@@ -237,6 +246,9 @@ describe("Bedrock Chat Stack Test", () => {
       envName: "test",
       envPrefix: "test-",
       bedrockRegion: "us-east-1",
+      internetSearchEngine: "duckduckgo",
+      internetSearchApiKey: "",
+      internetSearchMaxResults: 10,
       crossRegionReferences: true,
       webAclId: "",
       identityProviders: [],
@@ -318,6 +330,9 @@ describe("Bedrock Chat Stack Test", () => {
       envName: "test",
       envPrefix: "test-",
       bedrockRegion: "us-east-1",
+      internetSearchEngine: "duckduckgo",
+      internetSearchApiKey: "",
+      internetSearchMaxResults: 10,
       crossRegionReferences: true,
       webAclId: "",
       identityProviders: [],
@@ -375,6 +390,9 @@ describe("Bedrock Chat Stack Test", () => {
       envName: "test",
       envPrefix: "test-",
       bedrockRegion: "us-east-1",
+      internetSearchEngine: "duckduckgo",
+      internetSearchApiKey: "",
+      internetSearchMaxResults: 10,
       crossRegionReferences: true,
       // Simulate WAF disabled: no ARN provided from bin
       webAclId: "",
@@ -426,6 +444,9 @@ describe("Bedrock Chat Stack Test", () => {
       envName: "test",
       envPrefix: "test-",
       bedrockRegion: "us-east-1",
+      internetSearchEngine: "duckduckgo",
+      internetSearchApiKey: "",
+      internetSearchMaxResults: 10,
       crossRegionReferences: true,
       webAclId: wafArn,
       identityProviders: [],
@@ -478,6 +499,9 @@ describe("Bedrock Chat Stack Test", () => {
       envName: "test",
       envPrefix: "test-",
       bedrockRegion: "us-east-1",
+      internetSearchEngine: "duckduckgo",
+      internetSearchApiKey: "",
+      internetSearchMaxResults: 10,
       crossRegionReferences: true,
       webAclId: "",
       identityProviders: [],
@@ -559,6 +583,9 @@ describe("Bedrock Chat Stack Test", () => {
       envName: "test",
       envPrefix: "test-",
       bedrockRegion: "us-east-1",
+      internetSearchEngine: "duckduckgo",
+      internetSearchApiKey: "",
+      internetSearchMaxResults: 10,
       crossRegionReferences: true,
       webAclId: "",
       identityProviders: [],
@@ -595,6 +622,61 @@ describe("Bedrock Chat Stack Test", () => {
     template.hasResourceProperties("AWS::CloudFront::Distribution", {
       DistributionConfig: {
         Aliases: Match.absent(),
+      },
+    });
+  });
+
+  test("WebSocket Lambda includes INTERNET_SEARCH_SECRET_NAME env", () => {
+    const app = new cdk.App();
+
+    const bedrockRegionResourcesStack = new BedrockRegionResourcesStack(
+      app,
+      "BedrockRegionResourcesStackWsEnv",
+      {
+        env: { region: "us-east-1" },
+        crossRegionReferences: true,
+      }
+    );
+
+    const stack = new BedrockChatStack(app, "WsEnvStack", {
+      env: { region: "us-west-2" },
+      envName: "test",
+      envPrefix: "test-",
+      bedrockRegion: "us-east-1",
+      internetSearchEngine: "duckduckgo",
+      internetSearchApiKey: "",
+      internetSearchMaxResults: 10,
+      crossRegionReferences: true,
+      webAclId: "",
+      identityProviders: [],
+      userPoolDomainPrefix: "",
+      publishedApiAllowedIpV4AddressRanges: [""],
+      publishedApiAllowedIpV6AddressRanges: [""],
+      allowedSignUpEmailDomains: [],
+      autoJoinUserGroups: [],
+      selfSignUpEnabled: true,
+      enableIpV6: true,
+      allowedIpV4AddressRanges: [""],
+      allowedIpV6AddressRanges: [""],
+      documentBucket: bedrockRegionResourcesStack.documentBucket,
+      enableRagReplicas: false,
+      enableBedrockCrossRegionInference: false,
+      enableLambdaSnapStart: true,
+      enableBotStore: true,
+      enableBotStoreReplicas: false,
+      botStoreLanguage: "en",
+      tokenValidMinutes: 60,
+    });
+
+    const template = Template.fromStack(stack);
+
+    // Find the WebSocket Lambda (has WEBSOCKET_SESSION_TABLE_NAME env) and assert INTERNET_SEARCH_SECRET_NAME is present
+    template.hasResourceProperties("AWS::Lambda::Function", {
+      Environment: {
+        Variables: {
+          WEBSOCKET_SESSION_TABLE_NAME: Match.anyValue(),
+          INTERNET_SEARCH_SECRET_NAME: Match.anyValue(),
+        },
       },
     });
   });

@@ -14,6 +14,7 @@ import * as s3 from "aws-cdk-lib/aws-s3";
 import { excludeDockerImage } from "../constants/docker";
 import { PythonFunction } from "@aws-cdk/aws-lambda-python-alpha";
 import { Database } from "./database";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 
 export interface WebSocketProps {
   readonly database: Database;
@@ -25,6 +26,7 @@ export interface WebSocketProps {
   readonly accessLogBucket?: s3.Bucket;
   readonly enableBedrockCrossRegionInference: boolean;
   readonly enableLambdaSnapStart: boolean;
+  readonly internetSearchSecret: secretsmanager.ISecret;
 }
 
 export class WebSocket extends Construct {
@@ -84,20 +86,8 @@ export class WebSocket extends Construct {
       })
     );
 
-    // get api key from secrets manager
-    handlerRole.addToPolicy(
-      new iam.PolicyStatement({
-        actions: ["secretsmanager:GetSecretValue"],
-        resources: [
-          `arn:aws:secretsmanager:${Stack.of(this).region}:${
-            Stack.of(this).account
-          }:secret:firecrawl/*/*`,
-          `arn:aws:secretsmanager:${Stack.of(this).region}:${
-            Stack.of(this).account
-          }:secret:firecrawl/*/*`,
-        ],
-      })
-    );
+    // Grant read access to centralized Internet Search secret
+    props.internetSearchSecret.grantRead(handlerRole);
 
     largePayloadSupportBucket.grantRead(handlerRole);
     props.websocketSessionTable.grantReadWriteData(handlerRole);
@@ -128,6 +118,7 @@ export class WebSocket extends Construct {
         WEBSOCKET_SESSION_TABLE_NAME: props.websocketSessionTable.tableName,
         ENABLE_BEDROCK_CROSS_REGION_INFERENCE:
           props.enableBedrockCrossRegionInference.toString(),
+        INTERNET_SEARCH_SECRET_NAME: props.internetSearchSecret.secretName,
       },
       role: handlerRole,
       snapStart: props.enableLambdaSnapStart
