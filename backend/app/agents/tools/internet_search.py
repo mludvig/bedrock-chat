@@ -1,8 +1,11 @@
 import logging
 import json
+import os
+import boto3
+from botocore.exceptions import ClientError
 
 from app.agents.tools.agent_tool import AgentTool
-from app.repositories.models.custom_bot import BotModel, InternetToolModel
+from app.repositories.models.custom_bot import BotModel
 from app.routes.schemas.conversation import type_model_name
 from app.utils import get_bedrock_runtime_client
 from duckduckgo_search import DDGS
@@ -32,6 +35,39 @@ class InternetSearchInput(BaseModel):
             default_locale = cls.__fields__["locale"].default
             values["locale"] = default_locale
         return values
+
+
+def _get_internet_search_config():
+    """Get internet search configuration from Secrets Manager.
+
+    Returns:
+        dict: Configuration with searchEngine, apiKey, maxResults
+        None: If secret not found or error occurred
+    """
+    try:
+        secret_name = os.environ.get("INTERNET_SEARCH_SECRET_NAME")
+        if not secret_name:
+            logger.warning("INTERNET_SEARCH_SECRET_NAME environment variable not set")
+            return None
+
+        secrets_client = boto3.client("secretsmanager")  # type: ignore
+        response = secrets_client.get_secret_value(SecretId=secret_name)
+        config = json.loads(response["SecretString"])
+
+        logger.info(
+            f"Retrieved internet search config: engine={config.get('searchEngine')}"
+        )
+        return config
+
+    except ClientError as e:
+        logger.warning(f"Failed to get internet search config: {e}")
+        return None
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in internet search secret: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error getting internet search config: {e}")
+        return None
 
 
 def _summarize_content(content: str, title: str, url: str, query: str) -> str:
@@ -193,43 +229,36 @@ def _internet_search(
         f"Internet search request - Query: {query}, Time Limit: {time_limit}, Locale: {locale}"
     )
 
-    if bot is None:
-        logger.warning("Bot is None, defaulting to DuckDuckGo search")
-        return _search_with_duckduckgo(query, time_limit, locale)
+    # Get centralized internet search configuration
+    internet_search_config = _get_internet_search_config()
 
-    # Find internet search tool
-    internet_tool = next(
-        (tool for tool in bot.agent.tools if isinstance(tool, InternetToolModel)),
-        None,
-    )
+    if (
+        internet_search_config
+        and internet_search_config.get("searchEngine") == "firecrawl"
+    ):
+        api_key = internet_search_config.get("apiKey")
+        max_results = internet_search_config.get("maxResults", 10)
 
-    # If no internet tool found or search engine is duckduckgo, use DuckDuckGo
-    if not internet_tool or internet_tool.search_engine == "duckduckgo":
-        logger.info("No internet tool found or search engine is DuckDuckGo")
-        return _search_with_duckduckgo(query, time_limit, locale)
-
-    # Handle Firecrawl search
-    if internet_tool.search_engine == "firecrawl":
-        if not internet_tool.firecrawl_config:
-            raise ValueError("Firecrawl configuration is not set in the bot.")
-
-        try:
-            api_key = internet_tool.firecrawl_config.api_key
-            if not api_key:
-                raise ValueError("Firecrawl API key is empty")
-
-            return _search_with_firecrawl(
-                query=query,
-                api_key=api_key,
-                locale=locale,
-                max_results=internet_tool.firecrawl_config.max_results,
+        if api_key:
+            try:
+                logger.info("Using centralized Firecrawl configuration")
+                return _search_with_firecrawl(
+                    query=query,
+                    api_key=api_key,
+                    locale=locale,
+                    max_results=max_results,
+                )
+            except Exception as e:
+                logger.error(
+                    f"Error with centralized Firecrawl search, falling back to DuckDuckGo: {e}"
+                )
+        else:
+            logger.warning(
+                "Firecrawl configured but API key is empty, falling back to DuckDuckGo"
             )
-        except Exception as e:
-            logger.error(f"Error with Firecrawl search: {e}")
-            raise e
 
-    # Fallback to DuckDuckGo for any unexpected cases
-    logger.warning("Unexpected search engine configuration, falling back to DuckDuckGo")
+    # Default to DuckDuckGo (either configured as default or fallback)
+    logger.info("Using DuckDuckGo search")
     return _search_with_duckduckgo(query, time_limit, locale)
 
 

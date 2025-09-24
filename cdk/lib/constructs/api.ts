@@ -22,6 +22,7 @@ import * as logs from "aws-cdk-lib/aws-logs";
 import * as path from "path";
 import { IBucket } from "aws-cdk-lib/aws-s3";
 import * as codebuild from "aws-cdk-lib/aws-codebuild";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import { UsageAnalysis } from "./usage-analysis";
 import { excludeDockerImage } from "../constants/docker";
 import { PythonFunction } from "@aws-cdk/aws-lambda-python-alpha";
@@ -43,6 +44,7 @@ export interface ApiProps {
   readonly enableLambdaSnapStart: boolean;
   readonly openSearchEndpoint?: string;
   readonly globalAvailableModels?: string[];
+  readonly internetSearchSecret: secretsmanager.ISecret;
 }
 
 export class Api extends Construct {
@@ -227,6 +229,7 @@ export class Api extends Construct {
     props.usageAnalysis?.resultOutputBucket.grantReadWrite(handlerRole);
     props.usageAnalysis?.ddbBucket.grantRead(handlerRole);
     props.largeMessageBucket.grantReadWrite(handlerRole);
+    props.internetSearchSecret.grantRead(handlerRole);
 
     const handler = new PythonFunction(this, "HandlerV2", {
       entry: path.join(__dirname, "../../../backend"),
@@ -268,6 +271,7 @@ export class Api extends Construct {
           ? JSON.stringify(props.globalAvailableModels)
           : "[]",
         OPENSEARCH_DOMAIN_ENDPOINT: props.openSearchEndpoint || "",
+        INTERNET_SEARCH_SECRET_NAME: props.internetSearchSecret.secretName,
         AWS_LAMBDA_EXEC_WRAPPER: "/opt/bootstrap",
         PORT: "8000",
       },

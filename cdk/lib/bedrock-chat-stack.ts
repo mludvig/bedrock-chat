@@ -23,6 +23,7 @@ import { WebAclForPublishedApi } from "./constructs/webacl-for-published-api";
 import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as logs from "aws-cdk-lib/aws-logs";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as path from "path";
 import { BedrockCustomBotCodebuild } from "./constructs/bedrock-custom-bot-codebuild";
 import { BotStore, Language } from "./constructs/bot-store";
@@ -56,6 +57,9 @@ export interface BedrockChatStackProps extends StackProps {
   readonly hostedZoneId?: string;
   readonly devAccessIamRoleArn?: string;
   readonly allowedCountries?: string[];
+  readonly internetSearchEngine: string;
+  readonly internetSearchApiKey: string;
+  readonly internetSearchMaxResults: number;
 }
 
 export class BedrockChatStack extends cdk.Stack {
@@ -190,6 +194,17 @@ export class BedrockChatStack extends cdk.Stack {
       pointInTimeRecovery: true,
     });
 
+    // Internet search configuration secret (centralized for all bots)
+    const internetSearchSecret = new secretsmanager.Secret(this, "InternetSearchSecret", {
+      description: "Internet search configuration",
+      secretStringValue: cdk.SecretValue.unsafePlainText(JSON.stringify({
+        searchEngine: props.internetSearchEngine,
+        apiKey: props.internetSearchApiKey,
+        maxResults: props.internetSearchMaxResults,
+      })),
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
     // Custom Bot Store
     let botStore = undefined;
     if (props.enableBotStore) {
@@ -224,6 +239,7 @@ export class BedrockChatStack extends cdk.Stack {
       enableLambdaSnapStart: props.enableLambdaSnapStart,
       openSearchEndpoint: botStore?.openSearchEndpoint,
       globalAvailableModels: props.globalAvailableModels,
+      internetSearchSecret,
     });
     props.documentBucket.grantReadWrite(backendApi.handler);
     // Add permissions to API handler for BotStore

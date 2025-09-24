@@ -45,8 +45,9 @@ class TestInternetSearchTool(unittest.TestCase):
         )
         test_title = "Test Title"
         test_url = "https://example.com"
+        test_query = "test query"
 
-        summary = _summarize_content(test_content, test_title, test_url)
+        summary = _summarize_content(test_content, test_title, test_url, test_query)
 
         # Verify the summary is shorter than the original content
         self.assertLess(len(summary), len(test_content))

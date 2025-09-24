@@ -115,7 +115,12 @@ const BedrockChatParametersSchema = BaseParametersSchema.extend({
   globalAvailableModels: z.array(z.string()).default([]),
 
   // debug parameter
-  devAccessIamRoleArn: z.string().default("")
+  devAccessIamRoleArn: z.string().default(""),
+
+  // Internet search configuration (centralized for all bots)
+  internetSearchEngine: z.enum(["duckduckgo", "firecrawl"]).default("duckduckgo"),
+  internetSearchApiKey: z.string().default(""),
+  internetSearchMaxResults: z.number().min(1).max(100).default(10),
 });
 
 /**
