@@ -3,23 +3,21 @@ import {
   AgentTool,
   BedrockAgentConfig,
   BedrockAgentTool,
-  FirecrawlConfig,
+  InternetSearchConfig,
   InternetAgentTool,
-  SearchEngine,
   ToolType,
 } from '../types';
 import { isInternetTool, isBedrockAgentTool } from '../utils/typeGuards';
 import Toggle from '../../../components/Toggle';
-import { Dispatch, useCallback, useState, useEffect } from 'react';
+import { Dispatch, useCallback } from 'react';
 import { formatDescription } from '../functions/formatDescription';
 import Help from '../../../components/Help';
 import Skeleton from '../../../components/Skeleton';
 import { TooltipDirection } from '../../../constants';
-import { FirecrawlConfig as FirecrawlConfigComponent } from './FirecrawlConfig';
+import { InternetSearchConfig as InternetSearchConfigComponent } from './InternetSearchConfig';
 import { BedrockAgentConfig as BedrockAgentConfigComponent } from './BedrockAgentConfig';
-import ExpandableDrawerGroup from '../../../components/ExpandableDrawerGroup';
-import RadioButton from '../../../components/RadioButton';
-import { DEFAULT_FIRECRAWL_CONFIG } from '../constants';
+
+import { DEFAULT_INTERNET_SEARCH_CONFIG } from '../constants';
 
 type Props = {
   availableTools: AgentTool[] | undefined;
@@ -29,7 +27,6 @@ type Props = {
 
 export const AvailableTools = ({ availableTools, tools, setTools }: Props) => {
   const { t } = useTranslation();
-  const [searchEngine, setSearchEngine] = useState<SearchEngine>('duckduckgo');
 
   const handleChangeTool = useCallback(
     (tool: AgentTool) => () => {
@@ -47,7 +44,9 @@ export const AvailableTools = ({ availableTools, tools, setTools }: Props) => {
                   ...tool,
                   toolType: 'internet' as ToolType,
                   name: 'internet_search',
-                  searchEngine: searchEngine || 'duckduckgo',
+                  internetSearchConfig: {
+                    maxResults: DEFAULT_INTERNET_SEARCH_CONFIG.maxResults,
+                  },
                 } as AgentTool,
               ];
 
@@ -84,11 +83,11 @@ export const AvailableTools = ({ availableTools, tools, setTools }: Props) => {
         );
       }
     },
-    [setTools, searchEngine]
+    [setTools]
   );
 
-  const handleFirecrawlConfigChange = useCallback(
-    (config: FirecrawlConfig) => {
+  const handleInternetSearchConfigChange = useCallback(
+    (config: InternetSearchConfig) => {
       setTools((prevTools) =>
         prevTools.map((tool) => {
           if (tool.name === 'internet_search') {
@@ -96,10 +95,7 @@ export const AvailableTools = ({ availableTools, tools, setTools }: Props) => {
               ...tool,
               toolType: 'internet' as ToolType,
               name: 'internet_search',
-              searchEngine: isInternetTool(tool)
-                ? tool.searchEngine
-                : 'duckduckgo',
-              firecrawlConfig: config,
+              internetSearchConfig: config,
             } as AgentTool;
           }
           return tool;
@@ -128,52 +124,7 @@ export const AvailableTools = ({ availableTools, tools, setTools }: Props) => {
     [setTools]
   );
 
-  const handleSearchEngineChange = useCallback(
-    (value: string) => {
-      const newEngine = value as SearchEngine;
-      setSearchEngine(newEngine);
 
-      // Update existing internet_search tool if it exists
-      setTools((prevTools) => {
-        const internetSearchTool = prevTools.find(
-          (t) => t.name === 'internet_search'
-        );
-        if (!internetSearchTool) {
-          return prevTools;
-        }
-
-        const updatedTools = prevTools.map((tool) =>
-          tool.name === 'internet_search'
-            ? {
-                ...tool,
-                toolType: 'internet' as ToolType,
-                name: 'internet_search',
-                searchEngine: newEngine as SearchEngine,
-                // Reset firecrawlConfig when switching away from firecrawl
-                firecrawlConfig:
-                  newEngine === 'firecrawl' && isInternetTool(tool)
-                    ? tool.firecrawlConfig
-                    : undefined,
-              }
-            : tool
-        );
-        return updatedTools;
-      });
-    },
-    [setTools]
-  );
-
-  // Initialize searchEngine from existing tool if present
-  useEffect(() => {
-    const internetSearchTool = tools.find((t) => t.name === 'internet_search');
-    if (
-      internetSearchTool &&
-      isInternetTool(internetSearchTool) &&
-      internetSearchTool.searchEngine
-    ) {
-      setSearchEngine(internetSearchTool.searchEngine);
-    }
-  }, [tools]);
 
   return (
     <>
@@ -214,64 +165,20 @@ export const AvailableTools = ({ availableTools, tools, setTools }: Props) => {
           </div>
           {tool.name === 'internet_search' &&
             tools?.map(({ name }) => name).includes('internet_search') && (
-              <ExpandableDrawerGroup
-                className="ml-8 mt-2"
-                isDefaultShow={false}
-                label={t('agent.tools.internet_search.settings')}>
-                <div className="space-y-4">
-                  <div className="space-y-4">
-                    <div className="flex flex-col gap-2">
-                      <RadioButton
-                        name="searchEngine"
-                        value="duckduckgo"
-                        checked={searchEngine === 'duckduckgo'}
-                        label={t(
-                          'agent.tools.internet_search.engines.duckduckgo.label'
-                        )}
-                        onChange={handleSearchEngineChange}
-                      />
-                      <div className="ml-6 text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
-                        {t(
-                          'agent.tools.internet_search.engines.duckduckgo.hint'
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <RadioButton
-                        name="searchEngine"
-                        value="firecrawl"
-                        checked={searchEngine === 'firecrawl'}
-                        label={t(
-                          'agent.tools.internet_search.engines.firecrawl.label'
-                        )}
-                        onChange={handleSearchEngineChange}
-                      />
-                      <div className="ml-6 text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
-                        {t(
-                          'agent.tools.internet_search.engines.firecrawl.hint'
-                        )}
-                      </div>
-                      <div className="ml-6 text-sm">
-                        {searchEngine === 'firecrawl' && (
-                          <FirecrawlConfigComponent
-                            config={
-                              tools.find(
-                                (t): t is InternetAgentTool =>
-                                  t.name === 'internet_search' &&
-                                  isInternetTool(t)
-                              )?.firecrawlConfig || {
-                                apiKey: DEFAULT_FIRECRAWL_CONFIG.apiKey,
-                                maxResults: DEFAULT_FIRECRAWL_CONFIG.maxResults,
-                              }
-                            }
-                            onChange={handleFirecrawlConfigChange}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </ExpandableDrawerGroup>
+              <div className="ml-8 mt-2">
+                <InternetSearchConfigComponent
+                  config={
+                    tools.find(
+                      (t): t is InternetAgentTool =>
+                        t.name === 'internet_search' &&
+                        isInternetTool(t)
+                    )?.internetSearchConfig || {
+                      maxResults: DEFAULT_INTERNET_SEARCH_CONFIG.maxResults,
+                    }
+                  }
+                  onChange={handleInternetSearchConfigChange}
+                />
+              </div>
             )}
           {tool.name === 'bedrock_agent' &&
             tools?.map(({ name }) => name).includes('bedrock_agent') && (

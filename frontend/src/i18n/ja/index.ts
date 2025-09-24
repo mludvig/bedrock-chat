@@ -186,6 +186,7 @@ const translation: typeof en = {
           description: 'インターネットで情報を検索します。',
           settings: '検索設定',
           engine: '検索エンジン',
+          maxResults: '最大結果数',
           engines: {
             duckduckgo: {
               label: 'DuckDuckGo (For Trial)',

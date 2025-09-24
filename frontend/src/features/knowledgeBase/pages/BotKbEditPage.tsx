@@ -34,7 +34,6 @@ import RadioButton from '../../../components/RadioButton';
 import { useAgent } from '../../../features/agent/hooks/useAgent';
 import { AgentTool } from '../../../features/agent/types';
 import {
-  isInternetTool,
   isBedrockAgentTool,
 } from '../../../features/agent/utils/typeGuards';
 import { AvailableTools } from '../../../features/agent/components/AvailableTools';
@@ -912,19 +911,6 @@ const BotKbEditPage: React.FC = () => {
       if (isBedrockAgentTool(tool) && !tool.bedrockAgentConfig?.aliasId) {
         setErrorMessages(
           `tools-${idx}-bedrockAgentConfig.alias_id`,
-          t('input.validationError.required')
-        );
-        return true;
-      }
-
-      // Firecrawl tool validation
-      if (
-        isInternetTool(tool) &&
-        tool.searchEngine === 'firecrawl' &&
-        (!tool.firecrawlConfig || !tool.firecrawlConfig.apiKey)
-      ) {
-        setErrorMessages(
-          `tools-${idx}-firecrawlConfig.apiKey`,
           t('input.validationError.required')
         );
         return true;

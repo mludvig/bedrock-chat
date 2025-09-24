@@ -35,7 +35,6 @@ export const Tools = () => {
       toolType: "internet",
       name: 'internet_search',
       description: '',
-      searchEngine: 'duckduckgo',
     },
     {
       toolType: "plain",
@@ -124,59 +123,18 @@ export const ToolList = () => {
           status: 'success',
           input: { country: 'jp-jp', query: '東京 天気', time_limit: 'd' },
           resultContents: [
-            {
-              text: "search result 1",
-            },
-            {
-              text: "search result 2",
-            },
-            {
-              text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-            },
+            { text: '[\"東京の天気は晴れです。\", \"最高気温は25度です。\"]' },
           ],
         },
         tool2_tl: {
           name: 'database_query',
           status: 'success',
           input: { query: 'SELECT * FROM table' },
-          // Pass the content as stringified JSON
           resultContents: [{
             text: '{"result": "success", "data": "some data"}',
           }],
         },
-        tool3_tl: {
-          name: 'API Call',
-          status: 'error',
-          input: { country: 'jp-jp', query: '東京 天気', time_limit: 'd' },
-          // Pass the content as simple string
-          resultContents: [{
-            text: 'Error! Connection Timeout',
-          }],
-        },
       },
     }}
-    relatedDocuments={[
-      {
-        content: {
-          text: 'search result 1',
-        },
-        sourceId: 'tool1_tl@0',
-        sourceName: 'internet_search',
-      },
-      {
-        content: {
-          text: 'search result 2',
-        },
-        sourceId: 'tool1_tl@1',
-        sourceName: 'internet_search',
-      },
-      {
-        content: {
-          text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-        },
-        sourceId: 'tool1_tl@2',
-        sourceName: 'internet_search',
-      },
-    ]}
   />;
 };

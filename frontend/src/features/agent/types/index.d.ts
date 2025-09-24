@@ -7,12 +7,10 @@ export type AgentInput = {
   tools: AgentTool[];
 };
 
-export type FirecrawlConfig = {
-  apiKey: string;
+export type InternetSearchConfig = {
   maxResults: number;
 };
 
-export type SearchEngine = 'duckduckgo' | 'firecrawl';
 export type ToolType = 'internet' | 'plain' | 'bedrock_agent';
 
 export type BedrockAgentConfig = {
@@ -24,8 +22,7 @@ export type InternetAgentTool = {
   toolType: 'internet';
   name: string;
   description: string;
-  searchEngine: SearchEngine;
-  firecrawlConfig?: FirecrawlConfig;
+  internetSearchConfig?: InternetSearchConfig;
 };
 
 export type PlainAgentTool = {

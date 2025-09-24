@@ -1,11 +1,10 @@
-import { FirecrawlConfig } from '../types';
+import { InternetSearchConfig } from '../types';
 
-export const DEFAULT_FIRECRAWL_CONFIG: FirecrawlConfig = {
-  apiKey: '',
-  maxResults: 5,
+export const DEFAULT_INTERNET_SEARCH_CONFIG: InternetSearchConfig = {
+  maxResults: 10,
 };
 
-export const EDGE_FIRECRAWL_CONFIG = {
+export const EDGE_INTERNET_SEARCH_CONFIG = {
   maxResults: {
     MIN: 1,
     MAX: 50,

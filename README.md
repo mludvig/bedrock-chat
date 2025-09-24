@@ -68,6 +68,18 @@ By using the [Agent functionality](./docs/AGENT.md), your chatbot can automatica
 
 </details>
 
+### Internet Search
+
+Enable your chatbots to access real-time information from the web using integrated internet search capabilities. This feature allows bots to search for current information, news, and data to provide up-to-date responses.
+
+**Available Search Engines:**
+- **DuckDuckGo** (Free): Privacy-focused search engine with no API key required
+- **Firecrawl** (Premium): Advanced web crawling and content extraction with API key required
+
+**Centralized Configuration**: Internet search is configured globally during deployment, making it easier to manage and ensuring consistent behavior across all bots. Individual bots can enable or disable internet search, but the search engine and API credentials are managed centrally.
+
+**Migration from V2**: If you're upgrading from V2 where bots had individual search engine configurations, use the provided [migration script](./scripts/migrate_internet_search_config.py) to analyze your existing configurations and get recommendations for centralized settings.
+
 ## 🚀 Super-easy Deployment
 
 - In the us-east-1 region, open [Bedrock Model access](https://us-east-1.console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess) > `Manage model access` > Check all of models you wish to use and then `Save changes`.
@@ -110,6 +122,9 @@ You can specify the following parameters during deployment to enhance security a
 - **--bedrock-region**: Define the region where bedrock is available. (default: us-east-1)
 - **--repo-url**: The custom repo of Bedrock Chat to deploy, if forked or custom source control. (default: https://github.com/aws-samples/bedrock-chat.git)
 - **--version**: The version of Bedrock Chat to deploy. (default: latest version in development)
+- **--internet-search-engine**: Configure the internet search engine for all bots (duckduckgo or firecrawl). (default: duckduckgo)
+- **--internet-search-api-key**: API key for Firecrawl (required only if using firecrawl engine). (default: empty)
+- **--internet-search-max-results**: Maximum number of search results to return. (default: 10)
 - **--cdk-json-override**: You can override any CDK context values during deployment using the override JSON block. This allows you to modify the configuration without editing the cdk.json file directly.
 
 Example usage:
@@ -153,7 +168,14 @@ The override JSON must follow the same structure as cdk.json. You can override a
 #### Example command with parameters:
 
 ```sh
+# Example 1: Basic deployment with security restrictions
 ./bin.sh --disable-self-register --ipv4-ranges "192.0.2.0/25,192.0.2.128/25" --ipv6-ranges "2001:db8:1:2::/64,2001:db8:1:3::/64" --allowed-signup-email-domains "example.com,anotherexample.com" --bedrock-region "us-west-2" --version "v1.2.6"
+
+# Example 2: With Firecrawl internet search configuration
+./bin.sh --internet-search-engine "firecrawl" --internet-search-api-key "fc-your-api-key-here" --internet-search-max-results 15 --bedrock-region "us-west-2"
+
+# Example 3: With DuckDuckGo (free) internet search
+./bin.sh --internet-search-engine "duckduckgo" --internet-search-max-results 10 --bedrock-region "us-west-2"
 ```
 
 - After about 35 minutes, you will get the following output, which you can access from your browser
@@ -290,6 +312,9 @@ bedrockChatParams.set("default", {
   bedrockRegion: "us-east-1",
   allowedIpV4AddressRanges: ["192.168.0.0/16"],
   selfSignUpEnabled: true,
+  internetSearchEngine: "duckduckgo", // Free internet search
+  internetSearchMaxResults: 10,
+  // internetSearchApiKey not needed for DuckDuckGo
   globalAvailableModels: [
       "claude-v3.7-sonnet",
       "claude-v3.5-sonnet",
@@ -303,6 +328,8 @@ bedrockChatParams.set("default", {
 bedrockChatParams.set("dev", {
   bedrockRegion: "us-west-2",
   allowedIpV4AddressRanges: ["10.0.0.0/8"],
+  internetSearchEngine: "duckduckgo", // Use free option for dev
+  internetSearchMaxResults: 5, // Fewer results for dev
   enableRagReplicas: false, // Cost-saving for dev environment
   enableBotStoreReplicas: false, // Cost-saving for dev environment
 });
@@ -310,6 +337,9 @@ bedrockChatParams.set("dev", {
 bedrockChatParams.set("prod", {
   bedrockRegion: "us-east-1",
   allowedIpV4AddressRanges: ["172.16.0.0/12"],
+  internetSearchEngine: "firecrawl", // More robust option for production
+  internetSearchApiKey: "fc-your-production-api-key", // Required for Firecrawl
+  internetSearchMaxResults: 15, // More results for production users
   enableLambdaSnapStart: true,
   enableRagReplicas: true, // Enhanced availability for production
   enableBotStoreReplicas: true, // Enhanced availability for production

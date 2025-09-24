@@ -185,6 +185,7 @@ const translation = {
           description: 'Search the internet for information.',
           settings: 'Search Settings',
           engine: 'Search Engine',
+          maxResults: 'Maximum Results',
           engines: {
             duckduckgo: {
               label: 'DuckDuckGo (For Trial)',

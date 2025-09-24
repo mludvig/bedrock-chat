@@ -108,22 +108,6 @@ class InternetTool(BaseSchema):
     tool_type: Literal["internet"]
     name: str
     description: str
-    search_engine: Optional[Literal["duckduckgo", "firecrawl"]]
-    firecrawl_config: Optional[FirecrawlConfig] | None = None
-
-    @field_validator("search_engine")
-    def validate_search_engine(cls, v):
-        if v not in ["duckduckgo", "firecrawl"]:
-            raise ValueError(f"Invalid search engine: {v}")
-        return v
-
-    @validator("firecrawl_config")
-    def validate_firecrawl_config(cls, v, values):
-        if values.get("search_engine") == "firecrawl" and v is None:
-            raise ValueError(
-                "Firecrawl config is required when search engine is firecrawl"
-            )
-        return v
 
 
 class BedrockAgentTool(BaseSchema):

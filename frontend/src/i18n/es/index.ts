@@ -111,6 +111,7 @@ const translation = {
         internet_search: {
           name: 'Búsqueda en Internet',
           description: 'Buscar información en internet.',
+          maxResults: 'Máximo de resultados',
         },
       },
     },
