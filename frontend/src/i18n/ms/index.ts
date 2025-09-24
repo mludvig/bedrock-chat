@@ -114,6 +114,7 @@ const translation = {
         internet_search: {
           name: 'Carian Internet',
           description: 'Cari maklumat di internet.',
+          maxResults: 'Keputusan Maksimum',
         },
         knowledge_base_tool: {
           name: 'Dapatkan Pengetahuan',

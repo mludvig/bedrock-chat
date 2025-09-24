@@ -112,6 +112,7 @@ const translation = {
         internet_search: {
           name: 'การค้นหาอินเทอร์เน็ต',
           description: 'ค้นหาข้อมูลจากอินเทอร์เน็ต',
+          maxResults: 'จำนวนผลลัพธ์สูงสุด',
         },
         knowledge_base_tool: {
           name: 'ดึงข้อมูลความรู้',

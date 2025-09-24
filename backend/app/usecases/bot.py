@@ -662,7 +662,6 @@ def fetch_available_agent_tools() -> list[Tool]:
                     tool_type="internet",
                     name=tool.name,
                     description=tool.description,
-                    search_engine="duckduckgo",
                 )
             )
         else:

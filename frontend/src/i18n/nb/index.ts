@@ -63,6 +63,7 @@ const translation = {
         internet_search: {
           name: 'Internett-søk',
           description: 'Søk på internett etter informasjon.',
+          maxResults: 'Maksimalt antall resultater',
         },
       },
     },

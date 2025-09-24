@@ -3,6 +3,13 @@
 // const translation: typeof en = {
 const translation = {
   translation: {
+    agent: {
+      tools: {
+        internet_search: {
+          maxResults: '最大結果數',
+        },
+      },
+    },
     app: {
       name: 'Bedrock Chat',
       inputMessage: '請輸入訊息',

@@ -1,5 +1,12 @@
 const translation = {
   translation: {
+    agent: {
+      tools: {
+        internet_search: {
+          maxResults: 'Nombre maximal de résultats',
+        },
+      },
+    },
     app: {
       name: 'Bedrock Chat',
       inputMessage: 'Envoyer un message',

@@ -120,6 +120,7 @@ const translation = {
         internet_search: {
           name: 'Tìm kiếm Internet',
           description: 'Tìm kiếm thông tin trên internet.',
+          maxResults: 'Số lượng kết quả tối đa',
         },
         knowledge_base_tool: {
           name: 'Truy xuất Kiến thức',

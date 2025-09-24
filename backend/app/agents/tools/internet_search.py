@@ -126,7 +126,6 @@ def _search_with_duckduckgo(query: str, time_limit: str, locale: str) -> list:
     REGION = f"{country}-{language}".lower()
     SAFE_SEARCH = "moderate"
     MAX_RESULTS = 20
-    BACKEND = "api"
     logger.info(
         f"Executing DuckDuckGo search with query: {query}, region: {REGION}, time_limit: {time_limit}"
     )
@@ -138,7 +137,6 @@ def _search_with_duckduckgo(query: str, time_limit: str, locale: str) -> list:
                 safesearch=SAFE_SEARCH,
                 timelimit=time_limit,
                 max_results=MAX_RESULTS,
-                backend=BACKEND,
             )
         )
         logger.info(f"DuckDuckGo search completed. Found {len(results)} results")

@@ -1,5 +1,12 @@
 const translation = {
   translation: {
+    agent: {
+      tools: {
+        internet_search: {
+          maxResults: 'Risultati massimi',
+        },
+      },
+    },
     signIn: {
       button: {
         login: 'Login',

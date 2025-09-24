@@ -118,6 +118,7 @@ const translation = {
         internet_search: {
           name: 'Wyszukiwanie w Internecie',
           description: 'Wyszukaj informacje w internecie.',
+          maxResults: 'Maksymalna liczba wyników',
         },
         knowledge_base_tool: {
           name: 'Pobierz Wiedzę',
