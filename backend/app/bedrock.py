@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -22,7 +23,7 @@ from app.config import (
 from app.repositories.models.custom_bot import GenerationParamsModel
 from app.repositories.models.custom_bot_guardrails import BedrockGuardrailsModel
 from app.routes.schemas.conversation import type_model_name
-from app.utils import get_bedrock_runtime_client
+from app.utils import get_bedrock_client, get_bedrock_runtime_client
 from app.vector_search import SearchResult
 
 from botocore.exceptions import ClientError
@@ -42,6 +43,7 @@ if TYPE_CHECKING:
         SystemContentBlockTypeDef,
         ToolTypeDef,
     )
+    from mypy_boto3_bedrock.type_defs import InferenceProfileSummaryTypeDef
 
 
 logger = logging.getLogger(__name__)
@@ -86,264 +88,8 @@ BASE_MODEL_IDS = {
     "gpt-oss-120b": "openai.gpt-oss-120b-1:0",
 }
 
-# Global inference profiles
-GLOBAL_INFERENCE_PROFILES = {
-    "claude-v4-sonnet": {
-        "supported_regions": [
-            "us-west-2",
-            "us-east-1",
-            "us-east-2",
-            "eu-west-1",
-            "ap-northeast-1",
-        ]
-    },
-    "claude-v4.5-sonnet": {
-        "supported_regions": [
-            "us-west-2",
-            "us-west-1",
-            "us-east-2",
-            "us-east-1",
-            "sa-east-1",
-            "eu-west-3",
-            "eu-west-2",
-            "eu-west-1",
-            "eu-south-2",
-            "eu-south-1",
-            "eu-north-1",
-            "eu-central-2",
-            "eu-central-1",
-            "ca-central-1",
-            "ap-southeast-4",
-            "ap-southeast-3",
-            "ap-southeast-2",
-            "ap-southeast-1",
-            "ap-south-2",
-            "ap-south-1",
-            "ap-northeast-3",
-            "ap-northeast-2",
-            "ap-northeast-1",
-        ]
-    },
-    "claude-v4.5-haiku": {
-        "supported_regions": [
-            "us-west-2",
-            "us-west-1",
-            "us-east-2",
-            "us-east-1",
-            "sa-east-1",
-            "eu-west-3",
-            "eu-west-2",
-            "eu-west-1",
-            "eu-south-2",
-            "eu-south-1",
-            "eu-north-1",
-            "eu-central-2",
-            "eu-central-1",
-            "ca-central-1",
-            "ap-southeast-4",
-            "ap-southeast-3",
-            "ap-southeast-2",
-            "ap-southeast-1",
-            "ap-south-2",
-            "ap-south-1",
-            "ap-northeast-3",
-            "ap-northeast-2",
-            "ap-northeast-1",
-        ]
-    },
-}
-
-# Regional inference profiles
-REGIONAL_INFERENCE_PROFILES = {
-    "claude-v4-opus": {
-        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
-    },
-    "claude-v4.1-opus": {
-        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
-    },
-    "claude-v4-sonnet": {
-        "supported_regions": {
-            "us-east-1": "us",
-            "us-east-2": "us",
-            "us-west-2": "us",
-            "eu-central-1": "eu",
-            "eu-west-1": "eu",
-            "eu-west-3": "eu",
-            "ap-south-1": "apac",
-            "ap-northeast-1": "apac",
-            "ap-northeast-2": "apac",
-            "ap-southeast-1": "apac",
-            "ap-southeast-2": "apac",
-        }
-    },
-    "claude-v4.5-sonnet": {
-        "supported_regions": {
-            "us-east-1": "us",
-            "us-east-2": "us",
-            "us-west-1": "us",
-            "us-west-2": "us",
-            "eu-central-1": "eu",
-            "eu-north-1": "eu",
-            "eu-west-1": "eu",
-            "eu-west-2": "eu",
-            "eu-west-3": "eu",
-            "eu-south-1": "eu",
-            "eu-south-2": "eu",
-            "ap-northeast-1": "jp",
-            "ap-northeast-3": "jp",
-        }
-    },
-    "claude-v4.5-haiku": {
-        "supported_regions": {
-            "us-east-1": "us",
-            "us-east-2": "us",
-            "us-west-1": "us",
-            "us-west-2": "us",
-            "ap-northeast-1": "jp",
-            "ap-northeast-3": "jp",
-            "eu-central-1": "eu",
-            "eu-north-1": "eu",
-            "eu-west-1": "eu",
-            "eu-west-3": "eu",
-            "eu-south-1": "eu",
-            "eu-south-2": "eu",
-        }
-    },
-    "claude-v3-haiku": {
-        "supported_regions": {
-            "us-east-1": "us",
-            "us-east-2": "us",
-            "us-west-2": "us",
-            "eu-central-1": "eu",
-            "eu-west-1": "eu",
-            "eu-west-3": "eu",
-            "ap-south-1": "apac",
-            "ap-northeast-1": "apac",
-            "ap-northeast-2": "apac",
-            "ap-southeast-1": "apac",
-            "ap-southeast-2": "apac",
-        }
-    },
-    "claude-v3-opus": {"supported_regions": {"us-east-1": "us", "us-west-2": "us"}},
-    "claude-v3.5-sonnet": {
-        "supported_regions": {
-            "us-east-1": "us",
-            "us-east-2": "us",
-            "us-west-2": "us",
-            "eu-central-1": "eu",
-            "eu-west-1": "eu",
-            "eu-west-3": "eu",
-            "ap-south-1": "apac",
-            "ap-northeast-1": "apac",
-            "ap-northeast-2": "apac",
-            "ap-southeast-1": "apac",
-            "ap-southeast-2": "apac",
-        }
-    },
-    "claude-v3.5-sonnet-v2": {
-        "supported_regions": {
-            "us-east-1": "us",
-            "us-east-2": "us",
-            "us-west-2": "us",
-            "ap-south-1": "apac",
-            "ap-northeast-1": "apac",
-            "ap-northeast-2": "apac",
-            "ap-northeast-3": "apac",
-            "ap-southeast-1": "apac",
-            "ap-southeast-2": "apac",
-        }
-    },
-    "claude-v3.7-sonnet": {
-        "supported_regions": {
-            "us-east-1": "us",
-            "us-east-2": "us",
-            "us-west-2": "us",
-            "eu-central-1": "eu",
-            "eu-west-1": "eu",
-            "eu-west-3": "eu",
-        }
-    },
-    "claude-v3.5-haiku": {
-        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
-    },
-    "amazon-nova-pro": {
-        "supported_regions": {
-            "us-east-1": "us",
-            "us-east-2": "us",
-            "us-west-1": "us",
-            "us-west-2": "us",
-            "eu-central-1": "eu",
-            "eu-west-1": "eu",
-            "eu-west-3": "eu",
-            "eu-north-1": "eu",
-            "ap-south-1": "apac",
-            "ap-northeast-1": "apac",
-            "ap-northeast-2": "apac",
-            "ap-southeast-1": "apac",
-            "ap-southeast-2": "apac",
-        }
-    },
-    "amazon-nova-lite": {
-        "supported_regions": {
-            "us-east-2": "us",
-            "us-west-1": "us",
-            "us-west-2": "us",
-            "eu-central-1": "eu",
-            "eu-west-1": "eu",
-            "eu-west-3": "eu",
-            "eu-north-1": "eu",
-            "ap-south-1": "apac",
-            "ap-northeast-1": "apac",
-            "ap-northeast-2": "apac",
-            "ap-southeast-1": "apac",
-            "ap-southeast-2": "apac",
-        }
-    },
-    "amazon-nova-micro": {
-        "supported_regions": {
-            "us-east-2": "us",
-            "us-west-2": "us",
-            "eu-north-1": "eu",
-            "ap-south-1": "apac",
-            "ap-northeast-1": "apac",
-            "ap-northeast-2": "apac",
-            "ap-southeast-1": "apac",
-            "ap-southeast-2": "apac",
-        }
-    },
-    "deepseek-r1": {
-        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
-    },
-    "llama3-3-70b-instruct": {
-        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
-    },
-    "llama3-2-1b-instruct": {
-        "supported_regions": {
-            "us-east-1": "us",
-            "us-east-2": "us",
-            "us-west-2": "us",
-            "eu-central-1": "eu",
-            "eu-west-1": "eu",
-            "eu-west-3": "eu",
-        }
-    },
-    "llama3-2-3b-instruct": {
-        "supported_regions": {
-            "us-east-1": "us",
-            "us-east-2": "us",
-            "us-west-2": "us",
-            "eu-central-1": "eu",
-            "eu-west-1": "eu",
-            "eu-west-3": "eu",
-        }
-    },
-    "llama3-2-11b-instruct": {
-        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
-    },
-    "llama3-2-90b-instruct": {
-        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
-    },
-}
+# Inference Profiles cache TTL
+CACHE_TTL_SECONDS = 24 * 60 * 60     # 24 hours (profiles don't change frequently)
 
 client = get_bedrock_runtime_client()
 
@@ -1098,66 +844,164 @@ def calculate_price(
     )
 
 
-def get_global_inference_profile_id(
-    model: type_model_name, source_region: str
+# Inference Profiles cache
+_profile_cache: dict[str, tuple[float, list[InferenceProfileSummaryTypeDef]]] = {}
+
+
+def _get_cached_profiles(
+    region: str,
+) -> list[InferenceProfileSummaryTypeDef] | None:
+    """Get cached profiles if still valid."""
+    if region in _profile_cache:
+        timestamp, profiles = _profile_cache[region]
+        if time.time() - timestamp < CACHE_TTL_SECONDS:
+            return profiles
+    return None
+
+
+def _set_cached_profiles(
+    region: str, profiles: list[InferenceProfileSummaryTypeDef]
+) -> None:
+    """Store profiles in cache with current timestamp."""
+    _profile_cache[region] = (time.time(), profiles)
+
+
+def list_inference_profiles(region: str) -> list[InferenceProfileSummaryTypeDef]:
+    """
+    List all SYSTEM_DEFINED inference profiles for a region with TTL caching.
+
+    Returns cached profiles if available and not expired, otherwise queries the Bedrock API.
+    """
+    # Check cache first
+    cached = _get_cached_profiles(region)
+    if cached is not None:
+        logger.debug(f"Using cached inference profiles for region {region}")
+        return cached
+
+    # Query API
+    try:
+        logger.info(f"Fetching inference profiles from Bedrock API for region {region}")
+        client = get_bedrock_client(region=region)
+        response = client.list_inference_profiles(
+            typeEquals="SYSTEM_DEFINED", maxResults=1000
+        )
+        profiles = response.get("inferenceProfileSummaries", [])
+
+        # Cache the result
+        _set_cached_profiles(region, profiles)
+
+        logger.info(
+            f"Fetched and cached {len(profiles)} inference profiles for region {region}"
+        )
+        return profiles
+
+    except Exception as e:
+        logger.warning(
+            f"Failed to fetch inference profiles for region {region}: {e}. Will use fallback."
+        )
+        return []
+
+
+def find_inference_profile(
+    model: type_model_name,
+    region: str,
+    profile_type: Literal["global", "regional"],
 ) -> str | None:
-    """Get global inference profile ID if supported"""
-    profile_info = GLOBAL_INFERENCE_PROFILES.get(model)
-    if not profile_info or source_region not in profile_info["supported_regions"]:
-        return None
+    """
+    Find an inference profile for the given model and type.
 
-    base_model_id = BASE_MODEL_IDS.get(model)
-    return f"global.{base_model_id}" if base_model_id else None
+    Args:
+        model: The model name
+        region: AWS region
+        profile_type: "global" for global.* profiles, "regional" for area.* profiles
 
-
-def get_regional_inference_profile_id(
-    model: type_model_name, source_region: str
-) -> str | None:
-    """Get regional cross-region inference profile ID if supported"""
-    profile_info = REGIONAL_INFERENCE_PROFILES.get(model)
-    if not profile_info or source_region not in profile_info["supported_regions"]:
-        return None
-
+    Returns:
+        The inference profile ID if found, None otherwise
+    """
     base_model_id = BASE_MODEL_IDS.get(model)
     if not base_model_id:
         return None
 
-    area = profile_info["supported_regions"][source_region]
-    return f"{area}.{base_model_id}"
+    profiles = list_inference_profiles(region)
+
+    for profile in profiles:
+        if profile.get("status") != "ACTIVE":
+            continue
+
+        profile_id = profile.get("inferenceProfileId", "")
+
+        # Check if this profile matches our model
+        if profile_type == "global":
+            # Global profiles: global.{base_model_id}
+            expected_id = f"global.{base_model_id}"
+            if profile_id == expected_id:
+                return profile_id
+
+        elif profile_type == "regional":
+            # Regional profiles: {region_prefix}.{base_model_id}
+            # e.g., us.anthropic.claude-3-sonnet-20240229-v1:0
+            # Pattern: Any non-global prefix followed by the base model ID
+            if not profile_id.startswith("global.") and profile_id.endswith(f".{base_model_id}"):
+                parts = profile_id.split(".", 1)
+                if len(parts) == 2:
+                    # Valid regional profile - any short prefix (us, eu, apac, jp, au, etc.)
+                    return profile_id
+
+    return None
 
 
 def get_model_id(
     model: type_model_name,
-    enable_global: bool = ENABLE_BEDROCK_GLOBAL_INFERENCE,
-    enable_cross_region: bool = ENABLE_BEDROCK_CROSS_REGION_INFERENCE,
-    bedrock_region: str = BEDROCK_REGION,
+    bedrock_region: str | None = None,
+    enable_global: bool | None = None,
+    enable_cross_region: bool | None = None,
 ) -> str:
+    """
+    Get the best model ID for inference based on available inference profiles.
+
+    Priority:
+    1. Global inference profile (if enabled)
+    2. Regional cross-region inference profile (if enabled)
+    3. Base model ID (fallback)
+
+    Args:
+        model: The model name
+        bedrock_region: AWS region (defaults to BEDROCK_REGION env var)
+        enable_global: Enable global inference profiles (defaults to ENABLE_BEDROCK_GLOBAL_INFERENCE env var)
+        enable_cross_region: Enable regional cross-region inference profiles (defaults to ENABLE_BEDROCK_CROSS_REGION_INFERENCE env var)
+
+    Returns:
+        The model ID to use for inference
+    """
+    # Use environment defaults if not specified
+    region = bedrock_region if bedrock_region is not None else BEDROCK_REGION
+    if enable_global is None:
+        enable_global = ENABLE_BEDROCK_GLOBAL_INFERENCE
+    if enable_cross_region is None:
+        enable_cross_region = ENABLE_BEDROCK_CROSS_REGION_INFERENCE
+    
     base_model_id = BASE_MODEL_IDS.get(model)
     if not base_model_id:
         raise ValueError(f"Unsupported model: {model}")
 
-    # 1. First, try to use global inference profile if enabled and available
+    # Try global inference profile first
     if enable_global:
-        global_profile_id = get_global_inference_profile_id(model, bedrock_region)
-        if global_profile_id:
+        global_profile = find_inference_profile(model, region, "global")
+        if global_profile:
             logger.info(
-                f"Using global inference profile: {global_profile_id} for model '{model}'"
+                f"Using global inference profile: {global_profile} for model '{model}'"
             )
-            return global_profile_id
+            return global_profile
 
-    # 2. Fallback to regional cross-region inference profile if enabled and available
+    # Try regional cross-region inference profile
     if enable_cross_region:
-        regional_profile_id = get_regional_inference_profile_id(model, bedrock_region)
-        if regional_profile_id:
+        regional_profile = find_inference_profile(model, region, "regional")
+        if regional_profile:
             logger.info(
-                f"Using regional cross-region model ID: {regional_profile_id} for model '{model}' in region '{bedrock_region}'"
+                f"Using regional cross-region inference profile: {regional_profile} for model '{model}' in region '{region}'"
             )
-            return regional_profile_id
-        else:
-            logger.warning(
-                f"Region '{bedrock_region}' does not support cross-region inference for model '{model}'."
-            )
+            return regional_profile
 
-    # 3. Use standalone model (no global or cross-region inference)
-    logger.info(f"Using local model ID: {base_model_id} for model '{model}'")
+    # Fallback to base model ID
+    logger.info(f"Using base model ID: {base_model_id} for model '{model}'")
     return base_model_id

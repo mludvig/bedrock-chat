@@ -1,0 +1,68 @@
+{
+  "us-east-1": [
+    {
+      "inferenceProfileName": "US Anthropic Claude 3.5 Sonnet",
+      "description": "Routes requests to Anthropic Claude 3.5 Sonnet in us-east-1 and us-west-2.",
+      "createdAt": "2024-08-26 00:00:00+00:00",
+      "updatedAt": "2024-09-26 14:09:00+00:00",
+      "inferenceProfileArn": "arn:aws:bedrock:us-east-1:509624333533:inference-profile/us.anthropic.claude-3-5-sonnet-20240620-v1:0",
+      "inferenceProfileId": "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
+      "status": "ACTIVE",
+      "type": "SYSTEM_DEFINED"
+    },
+    {
+      "inferenceProfileName": "Global Claude Sonnet 4",
+      "description": "Routes requests to Claude Sonnet 4 globally across all supported AWS Regions.",
+      "createdAt": "2025-08-25 00:00:00+00:00",
+      "updatedAt": "2025-08-25 00:00:00+00:00",
+      "inferenceProfileArn": "arn:aws:bedrock:us-east-1:509624333533:inference-profile/global.anthropic.claude-sonnet-4-20250514-v1:0",
+      "inferenceProfileId": "global.anthropic.claude-sonnet-4-20250514-v1:0",
+      "status": "ACTIVE",
+      "type": "SYSTEM_DEFINED"
+    }
+  ],
+  "ap-northeast-1": [
+    {
+      "inferenceProfileName": "APAC Anthropic Claude 3.5 Sonnet",
+      "description": "Routes requests to Anthropic Claude 3.5 Sonnet in ap-northeast-1, ap-northeast-2, ap-southeast-1, ap-southeast-2 and ap-south-1.",
+      "createdAt": "2024-11-01 00:00:00+00:00",
+      "updatedAt": "2024-11-04 17:56:03.243427+00:00",
+      "inferenceProfileArn": "arn:aws:bedrock:ap-northeast-1:509624333533:inference-profile/apac.anthropic.claude-3-5-sonnet-20240620-v1:0",
+      "inferenceProfileId": "apac.anthropic.claude-3-5-sonnet-20240620-v1:0",
+      "status": "ACTIVE",
+      "type": "SYSTEM_DEFINED"
+    },
+    {
+      "inferenceProfileName": "Global Claude Sonnet 4",
+      "description": "Routes requests to Claude Sonnet 4 globally across all supported AWS Regions.",
+      "createdAt": "2025-08-25 00:00:00+00:00",
+      "updatedAt": "2025-08-25 00:00:00+00:00",
+      "inferenceProfileArn": "arn:aws:bedrock:ap-northeast-1:509624333533:inference-profile/global.anthropic.claude-sonnet-4-20250514-v1:0",
+      "inferenceProfileId": "global.anthropic.claude-sonnet-4-20250514-v1:0",
+      "status": "ACTIVE",
+      "type": "SYSTEM_DEFINED"
+    },
+    {
+      "inferenceProfileName": "APAC Claude Sonnet 4",
+      "description": "Routes requests to Claude Sonnet 4 in ap-northeast-1, ap-northeast-2, ap-northeast-3, ap-south-1, ap-south-2, ap-southeast-1, ap-southeast-2 and ap-southeast-4.",
+      "createdAt": "2025-05-20 00:00:00+00:00",
+      "updatedAt": "2025-10-07 06:00:31.481508+00:00",
+      "inferenceProfileArn": "arn:aws:bedrock:ap-northeast-1:509624333533:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0",
+      "inferenceProfileId": "apac.anthropic.claude-sonnet-4-20250514-v1:0",
+      "status": "ACTIVE",
+      "type": "SYSTEM_DEFINED"
+    }
+  ],
+  "ap-south-1": [
+    {
+      "inferenceProfileName": "APAC Claude Sonnet 4",
+      "description": "Routes requests to Claude Sonnet 4 in ap-northeast-1, ap-northeast-2, ap-northeast-3, ap-south-1, ap-south-2, ap-southeast-1, ap-southeast-2 and ap-southeast-4.",
+      "createdAt": "2025-05-20 00:00:00+00:00",
+      "updatedAt": "2025-08-08 19:36:56.933092+00:00",
+      "inferenceProfileArn": "arn:aws:bedrock:ap-south-1:509624333533:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0",
+      "inferenceProfileId": "apac.anthropic.claude-sonnet-4-20250514-v1:0",
+      "status": "ACTIVE",
+      "type": "SYSTEM_DEFINED"
+    }
+  ]
+}
